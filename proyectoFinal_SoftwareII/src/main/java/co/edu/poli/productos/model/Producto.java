@@ -35,10 +35,9 @@ public class Producto {
     @Column(length = 100)
     private String presentacion;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String lote;
 
-    @Column(nullable = false)
     private LocalDate fechaVencimiento;
 
     @Column(nullable = false, precision = 12, scale = 2)

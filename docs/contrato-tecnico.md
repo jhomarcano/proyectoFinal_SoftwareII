@@ -42,9 +42,10 @@ Este archivo es la versión oficial de las decisiones técnicas que usan los dos
 | service | Lógica de negocio | ProductoService (interfaz), ProductoServiceImpl |
 | repository | Acceso a datos | ProductoRepository (extiende `JpaRepository<Producto, Long>`) |
 | model | Dominio | Producto (entidad), Categoria (enumeración) |
-| dto | Transporte de datos | ProductoRequestDTO, ProductoResponseDTO |
-| exception | Manejo de errores | ProductoNoEncontradoException, GlobalExceptionHandler |
+| dto | Transporte de datos | ProductoRequestDTO, ProductoResponseDTO, PrecioFinalResponseDTO |
+| exception | Manejo de errores | ProductoNoEncontradoException, ReglaNegocioException, GlobalExceptionHandler |
 | config | Configuración | OpenApiConfig |
+| strategy | Patrón GoF Strategy (precio final) | PrecioStrategy (interfaz), SinDescuentoStrategy, DescuentoPorVencimientoStrategy, DescuentoPorCategoriaStrategy, PrecioContext |
 
 El controlador no recibe ni devuelve la entidad directamente: usa DTO. Así el cliente no puede enviar campos que genera el sistema (`id`, `fechaCreacion`) y la estructura de la base de datos no queda expuesta.
 
@@ -79,3 +80,27 @@ El controlador no recibe ni devuelve la entidad directamente: usa DTO. Así el c
 | `tieneStockBajo()` | `true` si `stock <= stockMinimo` |
 
 Cada fila de la tabla `productos` representa un producto con su lote. Los métodos `get` y `set` no se listan.
+
+
+## 4. Endpoints (tercera entrega)
+
+| Método | Ruta | Descripción | Respuestas |
+|---|---|---|---|
+| GET | /api/productos | Lista los productos | 200 |
+| GET | /api/productos/{id} | Consulta un producto | 200, 404 |
+| POST | /api/productos | Crea un producto | 201 (+ Location), 400 |
+| PUT | /api/productos/{id} | Actualiza un producto | 200, 400, 404 |
+| DELETE | /api/productos/{id} | Elimina un producto | 204, 404 |
+| GET | /api/productos/{id}/precio-final?estrategia=... | Precio final con una estrategia | 200, 400, 404 |
+
+Los errores se devuelven con el cuerpo `{timestamp, status, error, mensaje, detalles}`.
+
+## 5. Patrón Strategy: precio final
+
+| Estrategia | Regla |
+|---|---|
+| SIN_DESCUENTO (por defecto) | Precio base |
+| PROXIMO_VENCIMIENTO | 40 % si vence en 7 días o menos; 20 % si vence en los próximos 30 días |
+| CATEGORIA | Cuidado personal 15 %, suplementos 10 %, bebidas 5 %; resto sin descuento |
+
+No se calcula precio de un producto vencido (400). Para una política nueva se crea otra clase `@Component` que implemente `PrecioStrategy`.
