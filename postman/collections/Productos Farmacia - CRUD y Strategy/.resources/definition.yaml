@@ -1,0 +1,5 @@
+$kind: collection
+description: Ejecutar en orden (Collection Runner). Requiere la app en [http://localhost:8080](http://localhost:8080).
+variables:
+  baseUrl: http://localhost:8080
+  productoId: ""

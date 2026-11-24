@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/api/productos/{{productoId}}/precio-final?estrategia=PROXIMO_VENCIMIENTO"
+method: GET
+queryParams:
+  estrategia: PROXIMO_VENCIMIENTO
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Devuelve estrategia PROXIMO_VENCIMIENTO', () => pm.expect(pm.response.json().estrategia).to.eql('PROXIMO_VENCIMIENTO'));
+    language: text/javascript
+order: 7000

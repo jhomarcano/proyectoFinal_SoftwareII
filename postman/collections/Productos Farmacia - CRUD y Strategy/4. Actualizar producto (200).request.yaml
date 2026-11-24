@@ -1,0 +1,35 @@
+$kind: http-request
+url: "{{baseUrl}}/api/productos/{{productoId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Acetaminofén 500 mg",
+      "principioActivo": "Paracetamol",
+      "presentacion": "Caja x 20 tabletas",
+      "lote": "L2026-045",
+      "fechaVencimiento": "{{fechaLejana}}",
+      "precio": 9000.0,
+      "stock": 3,
+      "stockMinimo": 5,
+      "requiereFormula": false,
+      "categoria": "MEDICAMENTO",
+      "activo": true
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const d = new Date(); d.setDate(d.getDate() + 20);
+      pm.variables.set('fechaProxima', d.toISOString().slice(0,10));
+      const l = new Date(); l.setFullYear(l.getFullYear() + 1);
+      pm.variables.set('fechaLejana', l.toISOString().slice(0,10));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Precio actualizado', () => pm.expect(pm.response.json().precio).to.eql(9000));
+    language: text/javascript
+order: 4000

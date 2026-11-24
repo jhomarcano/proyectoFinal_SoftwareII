@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/api/productos/{{productoId}}/precio-final?estrategia=SIN_DESCUENTO"
+method: GET
+queryParams:
+  estrategia: SIN_DESCUENTO
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Estado 200', () => pm.response.to.have.status(200));
+      pm.test('Sin descuento', () => { const r = pm.response.json(); pm.expect(r.precioFinal).to.eql(r.precioBase); });
+    language: text/javascript
+order: 5000

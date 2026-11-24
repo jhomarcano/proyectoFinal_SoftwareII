@@ -1,0 +1,444 @@
+{
+  "info": {
+    "name": "Productos Farmacia - CRUD y Strategy",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Ejecutar en orden (Collection Runner). Requiere la app en http://localhost:8080."
+  },
+  "item": [
+    {
+      "name": "1. Crear producto (201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Acetaminofén 500 mg\",\n  \"principioActivo\": \"Paracetamol\",\n  \"presentacion\": \"Caja x 20 tabletas\",\n  \"lote\": \"L2026-045\",\n  \"fechaVencimiento\": \"{{fechaLejana}}\",\n  \"precio\": 8500.0,\n  \"stock\": 120,\n  \"stockMinimo\": 5,\n  \"requiereFormula\": false,\n  \"categoria\": \"MEDICAMENTO\",\n  \"activo\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const d = new Date(); d.setDate(d.getDate() + 20);",
+              "pm.variables.set('fechaProxima', d.toISOString().slice(0,10));",
+              "const l = new Date(); l.setFullYear(l.getFullYear() + 1);",
+              "pm.variables.set('fechaLejana', l.toISOString().slice(0,10));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+              "const p = pm.response.json();",
+              "pm.test('Devuelve id y valores por defecto', () => { pm.expect(p.id).to.be.a('number'); pm.expect(p.activo).to.eql(true); });",
+              "pm.collectionVariables.set('productoId', p.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Listar productos (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Es un arreglo', () => pm.expect(pm.response.json()).to.be.an('array'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Obtener por id (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos/{{productoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos",
+            "{{productoId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Id coincide', () => pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('productoId'))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Actualizar producto (200)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos/{{productoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos",
+            "{{productoId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Acetaminofén 500 mg\",\n  \"principioActivo\": \"Paracetamol\",\n  \"presentacion\": \"Caja x 20 tabletas\",\n  \"lote\": \"L2026-045\",\n  \"fechaVencimiento\": \"{{fechaLejana}}\",\n  \"precio\": 9000.0,\n  \"stock\": 3,\n  \"stockMinimo\": 5,\n  \"requiereFormula\": false,\n  \"categoria\": \"MEDICAMENTO\",\n  \"activo\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const d = new Date(); d.setDate(d.getDate() + 20);",
+              "pm.variables.set('fechaProxima', d.toISOString().slice(0,10));",
+              "const l = new Date(); l.setFullYear(l.getFullYear() + 1);",
+              "pm.variables.set('fechaLejana', l.toISOString().slice(0,10));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Precio actualizado', () => pm.expect(pm.response.json().precio).to.eql(9000));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Precio final - SIN_DESCUENTO (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos/{{productoId}}/precio-final?estrategia=SIN_DESCUENTO",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos",
+            "{{productoId}}",
+            "precio-final"
+          ],
+          "query": [
+            {
+              "key": "estrategia",
+              "value": "SIN_DESCUENTO"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Sin descuento', () => { const r = pm.response.json(); pm.expect(r.precioFinal).to.eql(r.precioBase); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Precio final - CATEGORIA (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos/{{productoId}}/precio-final?estrategia=CATEGORIA",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos",
+            "{{productoId}}",
+            "precio-final"
+          ],
+          "query": [
+            {
+              "key": "estrategia",
+              "value": "CATEGORIA"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Devuelve estrategia CATEGORIA', () => pm.expect(pm.response.json().estrategia).to.eql('CATEGORIA'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Precio final - PROXIMO_VENCIMIENTO (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos/{{productoId}}/precio-final?estrategia=PROXIMO_VENCIMIENTO",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos",
+            "{{productoId}}",
+            "precio-final"
+          ],
+          "query": [
+            {
+              "key": "estrategia",
+              "value": "PROXIMO_VENCIMIENTO"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Devuelve estrategia PROXIMO_VENCIMIENTO', () => pm.expect(pm.response.json().estrategia).to.eql('PROXIMO_VENCIMIENTO'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Crear con datos inválidos (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"\",\n  \"principioActivo\": \"Paracetamol\",\n  \"presentacion\": \"Caja x 20 tabletas\",\n  \"lote\": \"L2026-045\",\n  \"fechaVencimiento\": \"{{fechaLejana}}\",\n  \"precio\": -5,\n  \"stock\": -1,\n  \"stockMinimo\": 5,\n  \"requiereFormula\": false,\n  \"categoria\": \"MEDICAMENTO\",\n  \"activo\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const d = new Date(); d.setDate(d.getDate() + 20);",
+              "pm.variables.set('fechaProxima', d.toISOString().slice(0,10));",
+              "const l = new Date(); l.setFullYear(l.getFullYear() + 1);",
+              "pm.variables.set('fechaLejana', l.toISOString().slice(0,10));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 400', () => pm.response.to.have.status(400));",
+              "pm.test('Lista detalles de validación', () => pm.expect(pm.response.json().detalles.length).to.be.above(0));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Obtener inexistente (404)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos/999999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos",
+            "999999"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Eliminar producto (204)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos/{{productoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos",
+            "{{productoId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Eliminar ya eliminado (404)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/productos/{{productoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "productos",
+            "{{productoId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "productoId",
+      "value": ""
+    }
+  ]
+}

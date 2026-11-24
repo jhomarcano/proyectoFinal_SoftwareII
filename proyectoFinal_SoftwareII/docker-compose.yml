@@ -10,6 +10,26 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U productos_user -d productos_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Aplicación Spring Boot. Se levanta con: docker compose --profile app up --build
+  app:
+    build: .
+    container_name: productos-app
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/productos_db
+      DB_USER: productos_user
+      DB_PASSWORD: productos_pass
+    ports:
+      - "8080:8080"
 
   sonarqube:
     image: sonarqube:community

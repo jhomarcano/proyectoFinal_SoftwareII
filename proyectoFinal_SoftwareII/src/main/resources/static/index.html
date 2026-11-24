@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventario de Farmacia</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #fff; --ink: #1c2733; --muted: #66758a; --line: #dde3ea;
+    --brand: #0f766e; --brand-dark: #0b5a54; --danger: #b42318; --warn: #b54708; --ok: #067647;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--bg); color: var(--ink); }
+  header { background: var(--brand); color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; flex: 1; }
+  header a { color: #d6f5f1; font-size: 14px; }
+  main { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
+  .toolbar { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .toolbar input[type=search] { flex: 1; min-width: 200px; }
+  input, select, button { font: inherit; }
+  input, select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: #fff; width: 100%; }
+  button { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  button:hover { background: #eef2f5; }
+  button.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+  button.primary:hover { background: var(--brand-dark); }
+  button.danger { color: var(--danger); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { background: #f8fafb; color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+  tr:last-child td { border-bottom: none; }
+  td.num { text-align: right; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-right: 4px; }
+  .b-red { background: #fee4e2; color: var(--danger); }
+  .b-amber { background: #fef0c7; color: var(--warn); }
+  .b-green { background: #d1fadf; color: var(--ok); }
+  .b-gray { background: #eaecf0; color: #475467; }
+  .actions { display: flex; gap: 6px; }
+  .actions button { padding: 4px 10px; font-size: 13px; }
+  .empty { padding: 30px; text-align: center; color: var(--muted); }
+  #msg { margin-bottom: 12px; padding: 10px 14px; border-radius: 6px; display: none; font-size: 14px; }
+  #msg.ok { display: block; background: #d1fadf; color: var(--ok); }
+  #msg.err { display: block; background: #fee4e2; color: var(--danger); }
+  dialog { border: none; border-radius: 10px; padding: 0; width: min(560px, 94vw); box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  dialog::backdrop { background: rgba(16,24,40,.5); }
+  .dlg-head { padding: 14px 20px; border-bottom: 1px solid var(--line); font-weight: 700; }
+  .dlg-body { padding: 18px 20px; }
+  .dlg-foot { padding: 12px 20px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  label.check { display: flex; gap: 8px; align-items: center; color: var(--ink); font-size: 14px; margin-top: 18px; }
+  label.check input { width: auto; }
+  #formErr { color: var(--danger); font-size: 13px; margin-top: 10px; white-space: pre-line; }
+  .result { margin-top: 14px; padding: 12px; background: #f8fafb; border: 1px solid var(--line); border-radius: 6px; font-size: 14px; line-height: 1.6; }
+  .big { font-size: 22px; font-weight: 700; color: var(--brand); }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Inventario de Farmacia — CRUD de Productos</h1>
+  <a href="/swagger-ui.html" target="_blank">Swagger UI</a>
+</header>
+
+<main>
+  <div id="msg" role="status"></div>
+  <div class="toolbar">
+    <input type="search" id="buscar" placeholder="Buscar por nombre, principio activo, lote o categoría…">
+    <button class="primary" id="btnNuevo">+ Nuevo producto</button>
+  </div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Nombre</th><th>Categoría</th><th>Lote</th><th>Vence</th>
+          <th class="num">Precio</th><th class="num">Stock</th><th>Estado</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="filas"></tbody>
+    </table>
+    <div id="vacio" class="empty" style="display:none">No hay productos para mostrar.</div>
+  </div>
+</main>
+
+<!-- Crear / editar -->
+<dialog id="dlgForm">
+  <form method="dialog" id="form">
+    <div class="dlg-head" id="formTitulo">Nuevo producto</div>
+    <div class="dlg-body">
+      <div class="grid">
+        <div class="full"><label for="nombre">Nombre *</label><input id="nombre" required maxlength="150"></div>
+        <div><label for="principioActivo">Principio activo</label><input id="principioActivo" maxlength="150"></div>
+        <div><label for="presentacion">Presentación</label><input id="presentacion" maxlength="100"></div>
+        <div><label for="lote">Lote</label><input id="lote" maxlength="100"></div>
+        <div><label for="fechaVencimiento">Fecha de vencimiento</label><input id="fechaVencimiento" type="date"></div>
+        <div><label for="precio">Precio *</label><input id="precio" type="number" step="0.01" min="0" required></div>
+        <div><label for="categoria">Categoría *</label>
+          <select id="categoria" required>
+            <option value="MEDICAMENTO">Medicamento</option>
+            <option value="CUIDADO_PERSONAL">Cuidado personal</option>
+            <option value="SUPLEMENTO">Suplemento</option>
+            <option value="DISPOSITIVO_MEDICO">Dispositivo médico</option>
+            <option value="BEBIDA">Bebida</option>
+            <option value="OTROS">Otros</option>
+          </select></div>
+        <div><label for="stock">Stock *</label><input id="stock" type="number" min="0" step="1" required></div>
+        <div><label for="stockMinimo">Stock mínimo</label><input id="stockMinimo" type="number" min="0" step="1" value="5"></div>
+        <label class="check"><input id="requiereFormula" type="checkbox"> Requiere fórmula médica</label>
+        <label class="check"><input id="activo" type="checkbox" checked> Activo</label>
+      </div>
+      <div id="formErr"></div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" id="btnCancelar">Cancelar</button>
+      <button type="submit" class="primary" id="btnGuardar">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Precio final (patrón Strategy) -->
+<dialog id="dlgPrecio">
+  <div class="dlg-head">Precio final — patrón Strategy</div>
+  <div class="dlg-body">
+    <div id="precioProducto" style="margin-bottom:12px;font-weight:700"></div>
+    <label for="estrategia">Estrategia de precio</label>
+    <select id="estrategia">
+      <option value="SIN_DESCUENTO">SIN_DESCUENTO — precio base</option>
+      <option value="PROXIMO_VENCIMIENTO">PROXIMO_VENCIMIENTO — descuento por vencimiento</option>
+      <option value="CATEGORIA">CATEGORIA — descuento por categoría</option>
+    </select>
+    <div class="result" id="precioResultado">Elige una estrategia para calcular.</div>
+  </div>
+  <div class="dlg-foot"><button id="btnCerrarPrecio">Cerrar</button></div>
+</dialog>
+
+<script>
+const API = '/api/productos';
+let productos = [];
+let editandoId = null;
+let precioId = null;
+
+const $ = id => document.getElementById(id);
+const moneda = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 2 }).format(n);
+
+function aviso(texto, tipo) {
+  const m = $('msg');
+  m.textContent = texto;
+  m.className = tipo;
+  clearTimeout(aviso.t);
+  aviso.t = setTimeout(() => { m.className = ''; m.textContent = ''; }, 5000);
+}
+
+async function llamar(url, opciones) {
+  const r = await fetch(url, opciones);
+  if (r.status === 204) return null;
+  const cuerpo = await r.json().catch(() => null);
+  if (!r.ok) {
+    const e = new Error((cuerpo && cuerpo.mensaje) || 'Error ' + r.status);
+    e.detalles = (cuerpo && cuerpo.detalles) || [];
+    throw e;
+  }
+  return cuerpo;
+}
+
+function celda(texto, clase) {
+  const td = document.createElement('td');
+  td.textContent = texto;
+  if (clase) td.className = clase;
+  return td;
+}
+function badge(texto, clase) {
+  const s = document.createElement('span');
+  s.className = 'badge ' + clase;
+  s.textContent = texto;
+  return s;
+}
+function boton(texto, clase, fn) {
+  const b = document.createElement('button');
+  b.textContent = texto;
+  if (clase) b.className = clase;
+  b.addEventListener('click', fn);
+  return b;
+}
+
+function pintar() {
+  const q = $('buscar').value.trim().toLowerCase();
+  const lista = productos.filter(p =>
+    !q || [p.nombre, p.principioActivo, p.lote, p.categoria].some(v => (v || '').toLowerCase().includes(q)));
+  const tbody = $('filas');
+  tbody.replaceChildren();
+  $('vacio').style.display = lista.length ? 'none' : 'block';
+  for (const p of lista) {
+    const tr = document.createElement('tr');
+    tr.append(
+      celda(p.id), celda(p.nombre), celda(p.categoria.replaceAll('_', ' ')),
+      celda(p.lote || '—'), celda(p.fechaVencimiento || '—'),
+      celda(moneda(p.precio), 'num'), celda(p.stock, 'num'));
+    const estado = document.createElement('td');
+    if (p.vencido) estado.append(badge('Vencido', 'b-red'));
+    else if (p.porVencer) estado.append(badge('Por vencer', 'b-amber'));
+    if (p.stockBajo) estado.append(badge('Stock bajo', 'b-amber'));
+    if (!p.activo) estado.append(badge('Inactivo', 'b-gray'));
+    if (p.requiereFormula) estado.append(badge('Con fórmula', 'b-gray'));
+    if (!estado.hasChildNodes()) estado.append(badge('OK', 'b-green'));
+    const acc = document.createElement('td');
+    const caja = document.createElement('div');
+    caja.className = 'actions';
+    caja.append(
+      boton('Precio', '', () => abrirPrecio(p)),
+      boton('Editar', '', () => abrirForm(p)),
+      boton('Eliminar', 'danger', () => eliminar(p)));
+    acc.append(caja);
+    tr.append(estado, acc);
+    tbody.append(tr);
+  }
+}
+
+async function cargar() {
+  try {
+    productos = await llamar(API);
+    pintar();
+  } catch (e) { aviso('No se pudo cargar la lista: ' + e.message, 'err'); }
+}
+
+function abrirForm(p) {
+  editandoId = p ? p.id : null;
+  $('formTitulo').textContent = p ? 'Editar producto #' + p.id : 'Nuevo producto';
+  $('formErr').textContent = '';
+  $('form').reset();
+  if (p) {
+    for (const k of ['nombre', 'principioActivo', 'presentacion', 'lote', 'fechaVencimiento', 'precio', 'stock', 'stockMinimo', 'categoria'])
+      $(k).value = p[k] ?? '';
+    $('requiereFormula').checked = !!p.requiereFormula;
+    $('activo').checked = !!p.activo;
+  }
+  $('dlgForm').showModal();
+}
+
+$('form').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const num = id => $(id).value === '' ? null : Number($(id).value);
+  const txt = id => $(id).value.trim() === '' ? null : $(id).value.trim();
+  const cuerpo = {
+    nombre: txt('nombre'), principioActivo: txt('principioActivo'), presentacion: txt('presentacion'),
+    lote: txt('lote'), fechaVencimiento: txt('fechaVencimiento'), precio: num('precio'),
+    stock: num('stock'), stockMinimo: num('stockMinimo'), requiereFormula: $('requiereFormula').checked,
+    categoria: $('categoria').value, activo: $('activo').checked
+  };
+  try {
+    await llamar(editandoId ? API + '/' + editandoId : API, {
+      method: editandoId ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cuerpo)
+    });
+    $('dlgForm').close();
+    aviso(editandoId ? 'Producto actualizado.' : 'Producto creado.', 'ok');
+    cargar();
+  } catch (e) {
+    $('formErr').textContent = [e.message, ...e.detalles].join('\n');
+  }
+});
+
+async function eliminar(p) {
+  if (!confirm('¿Eliminar "' + p.nombre + '"?')) return;
+  try {
+    await llamar(API + '/' + p.id, { method: 'DELETE' });
+    aviso('Producto eliminado.', 'ok');
+    cargar();
+  } catch (e) { aviso(e.message, 'err'); }
+}
+
+async function calcularPrecio() {
+  const caja = $('precioResultado');
+  try {
+    const r = await llamar(API + '/' + precioId + '/precio-final?estrategia=' + encodeURIComponent($('estrategia').value));
+    caja.replaceChildren();
+    const linea = (t, v) => { const d = document.createElement('div'); d.textContent = t + ': ' + v; caja.append(d); };
+    linea('Estrategia', r.estrategia + ' — ' + r.descripcionEstrategia);
+    linea('Precio base', moneda(r.precioBase));
+    linea('Descuento', moneda(r.descuento));
+    const g = document.createElement('div');
+    g.className = 'big';
+    g.textContent = moneda(r.precioFinal);
+    caja.append(g);
+  } catch (e) { caja.textContent = e.message; }
+}
+function abrirPrecio(p) {
+  precioId = p.id;
+  $('precioProducto').textContent = p.nombre + ' (#' + p.id + ')';
+  $('estrategia').value = 'SIN_DESCUENTO';
+  $('dlgPrecio').showModal();
+  calcularPrecio();
+}
+
+$('btnNuevo').addEventListener('click', () => abrirForm(null));
+$('btnCancelar').addEventListener('click', () => $('dlgForm').close());
+$('btnCerrarPrecio').addEventListener('click', () => $('dlgPrecio').close());
+$('estrategia').addEventListener('change', calcularPrecio);
+$('buscar').addEventListener('input', pintar);
+cargar();
+</script>
+</body>
+</html>
