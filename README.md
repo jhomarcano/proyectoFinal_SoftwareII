@@ -1,6 +1,5 @@
-<<<<<<< HEAD
 # proyectoFinal_SoftwareII
-=======
+
 # Inventario de Farmacia — CRUD de Productos
 
 Proyecto final de Ingeniería de Software II (Politécnico Grancolombiano). Aplicación web CRUD para la entidad **Producto**, con arquitectura en capas, patrón de diseño GoF **Strategy**, Docker, ORM, Swagger, Postman, SonarQube y GitHub.
