@@ -6,7 +6,7 @@ Proyecto final de Ingeniería de Software II (Politécnico Grancolombiano). Apli
 
 **Integrantes:** Juan Esteban Rosero Jiménez ([@Juanes04af](https://github.com/Juanes04af)) · Jhomar Alejandra Cano Ramírez ([@jhomarcano](https://github.com/jhomarcano))
 
-**Video explicativo:** _pegar aquí el enlace_
+**Video explicativo:**[Video Expicativo](https://youtu.be/hzqVQ0FwENs)
 
 ## Tecnologías
 
